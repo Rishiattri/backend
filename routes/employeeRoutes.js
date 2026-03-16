@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
-
 const mongoose = require("mongoose");
 
-// Employee schema
 const employeeSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -12,22 +10,44 @@ const employeeSchema = new mongoose.Schema({
 const Employee = mongoose.model("Employee", employeeSchema);
 
 
-// GET TOTAL EMPLOYEES
-router.get("/", async (req, res) => {
+// ADD EMPLOYEE
+router.post("/add", async (req, res) => {
+
   try {
 
-    const total = await Employee.countDocuments();
+    const { name, email } = req.body;
 
-    res.json({
-      totalEmployees: total
+    const employee = new Employee({
+      name,
+      email
     });
 
-  } catch (error) {
+    await employee.save();
+
+    res.json({
+      message: "Employee added successfully"
+    });
+
+  } catch (err) {
+
     res.status(500).json({
       message: "Server error"
     });
+
   }
+
 });
 
+
+// GET TOTAL EMPLOYEES
+router.get("/", async (req, res) => {
+
+  const total = await Employee.countDocuments();
+
+  res.json({
+    totalEmployees: total
+  });
+
+});
 
 module.exports = router;
