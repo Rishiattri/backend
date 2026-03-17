@@ -2,6 +2,7 @@ const express = require("express");
 
 const Leave = require("../models/Leave");
 const LeaveBalance = require("../models/LeaveBalance");
+const e = require("express");
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const balanceKeyMap = {
   Casual: "casual",
   Sick: "sick",
   Earned: "earned",
+  Emergency: "emergency",
   Unpaid: "unpaid"
 };
 
@@ -17,6 +19,7 @@ const buildDefaultBalance = (employeeName) => ({
   casual: { total: 12, used: 0, remaining: 12 },
   sick: { total: 8, used: 0, remaining: 8 },
   earned: { total: 15, used: 0, remaining: 15 },
+  emergency: { total: 5, used: 0, remaining: 5 },
   unpaid: { total: 0, used: 0, remaining: 0 }
 });
 

@@ -41,6 +41,10 @@ const leaveBalanceSchema = new mongoose.Schema(
       type: balanceBucketSchema,
       default: () => ({ total: 15, used: 0, remaining: 15 })
     },
+    emergency: {
+      type: balanceBucketSchema,
+      default: () => ({ total: 5, used: 0, remaining: 5 })
+    },
     unpaid: {
       type: balanceBucketSchema,
       default: () => ({ total: 0, used: 0, remaining: 0 })
