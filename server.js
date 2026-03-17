@@ -1,12 +1,16 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+const authRoutes = require("./routes/authRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const salaryRoutes = require("./routes/salaryRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 async function dropLegacyLeaveBalanceIndexes() {
   try {
@@ -62,9 +66,9 @@ loadEnvFile();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI;
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
 app.use(cors({
   origin: "http://localhost:3000",
   credentials: true
@@ -75,51 +79,13 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, unique: true, required: true },
-  password: { type: String, required: true }
-});
-
-const User = mongoose.model("User", userSchema);
-
-app.post("/api/signup", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const exists = await User.findOne({ email });
-
-    if (exists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const user = new User({ email, password });
-    await user.save();
-
-    res.json({ message: "Signup successful" });
-  } catch (_err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email, password });
-
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    res.json({ message: "Login successful", email });
-  } catch (_err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
+app.use("/api", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leaves", leaveRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/salary", salaryRoutes);
+app.use("/api/settings", settingsRoutes);
 
 async function startServer() {
   try {

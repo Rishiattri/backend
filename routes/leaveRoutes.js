@@ -2,6 +2,7 @@ const express = require("express");
 
 const Leave = require("../models/Leave");
 const LeaveBalance = require("../models/LeaveBalance");
+const SystemSettings = require("../models/SystemSettings");
 const e = require("express");
 
 const router = express.Router();
@@ -66,7 +67,7 @@ const applyApprovalImpact = (balance, leaveType, days, direction) => {
 
 router.post("/apply", async (req, res) => {
   try {
-    const { employeeName, leaveType, startDate, endDate, reason } = req.body;
+    const { employeeName, leaveType, startDate, endDate, reason, adminOverride = false } = req.body;
     const days = getDurationInDays(startDate, endDate);
 
     if (!employeeName || !leaveType || !startDate || !endDate || !reason) {
@@ -81,6 +82,25 @@ router.post("/apply", async (req, res) => {
         success: false,
         message: "End date must be the same as or after the start date"
       });
+    }
+
+    const settings = (await SystemSettings.findOne()) || (await SystemSettings.create({}));
+    const maxLeavesPerDay = settings.leavePolicy?.maxLeavesPerDay || 2;
+    const allowAdminOverride = settings.leavePolicy?.allowAdminOverride ?? true;
+
+    if (!(adminOverride && allowAdminOverride)) {
+      const overlappingApprovedLeaves = await Leave.countDocuments({
+        status: "Approved",
+        startDate: { $lte: new Date(endDate) },
+        endDate: { $gte: new Date(startDate) }
+      });
+
+      if (overlappingApprovedLeaves >= maxLeavesPerDay) {
+        return res.status(400).json({
+          success: false,
+          message: `Daily leave limit reached. Only ${maxLeavesPerDay} approved leave requests are allowed for the selected period.`
+        });
+      }
     }
 
     await ensureBalance(employeeName.trim());
