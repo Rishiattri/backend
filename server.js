@@ -5,6 +5,26 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const employeeRoutes = require("./routes/employeeRoutes");
+const leaveRoutes = require("./routes/leaveRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+
+async function dropLegacyLeaveBalanceIndexes() {
+  try {
+    const indexes = await mongoose.connection.collection("leavebalances").indexes();
+    const legacyIndexes = indexes.filter((index) =>
+      Object.prototype.hasOwnProperty.call(index.key || {}, "employeeEmail")
+    );
+
+    for (const legacyIndex of legacyIndexes) {
+      await mongoose.connection.collection("leavebalances").dropIndex(legacyIndex.name);
+      console.log(`Dropped legacy leave balance index: ${legacyIndex.name}`);
+    }
+  } catch (error) {
+    if (error?.codeName !== "NamespaceNotFound") {
+      console.error("Leave balance index cleanup failed:", error.message);
+    }
+  }
+}
 
 function loadEnvFile() {
   const envPath = path.join(__dirname, ".env");
@@ -42,7 +62,8 @@ loadEnvFile();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI;
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(cors({
   origin: "http://localhost:3000",
@@ -54,8 +75,6 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-
-// USER MODEL
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true }
@@ -63,8 +82,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-
-// SIGNUP
 app.post("/api/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,17 +96,13 @@ app.post("/api/signup", async (req, res) => {
     await user.save();
 
     res.json({ message: "Signup successful" });
-
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// LOGIN
 app.post("/api/login", async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     const user = await User.findOne({ email, password });
@@ -99,21 +112,20 @@ app.post("/api/login", async (req, res) => {
     }
 
     res.json({ message: "Login successful", email });
-
-  } catch (err) {
+  } catch (_err) {
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// EMPLOYEE ROUTES
 app.use("/api/employees", employeeRoutes);
-
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/projects", projectRoutes);
 
 async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log("MongoDB connected");
+    await dropLegacyLeaveBalanceIndexes();
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
