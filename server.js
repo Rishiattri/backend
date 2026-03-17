@@ -3,14 +3,18 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const authRoutes = require("./routes/authRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const Profile = require("./models/Profile");
 const profileRoutes = require("./routes/profileRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const salaryRoutes = require("./routes/salaryRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
+const User = require("./models/User");
 
 async function dropLegacyLeaveBalanceIndexes() {
   try {
@@ -27,6 +31,38 @@ async function dropLegacyLeaveBalanceIndexes() {
     if (error?.codeName !== "NamespaceNotFound") {
       console.error("Leave balance index cleanup failed:", error.message);
     }
+  }
+}
+
+async function ensureDefaultAdmin() {
+  try {
+    const defaultEmail = "nirontech@yopmail.com";
+    const existingAdmin = await User.findOne({ email: defaultEmail });
+
+    if (existingAdmin) {
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash("admin", 10);
+    const admin = await User.create({
+      fullName: "StaffHub Admin",
+      email: defaultEmail,
+      password: hashedPassword,
+      role: "admin"
+    });
+
+    await Profile.create({
+      userId: admin._id,
+      name: admin.fullName,
+      email: admin.email,
+      role: "Admin",
+      department: "Administration",
+      experience: "Experienced"
+    });
+
+    console.log("Default admin created: nirontech@yopmail.com / admin");
+  } catch (error) {
+    console.error("Default admin bootstrap skipped:", error.message);
   }
 }
 
@@ -80,6 +116,7 @@ if (!MONGODB_URI) {
 }
 
 app.use("/api", authRoutes);
+app.use("/api/attendance", attendanceRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/profile", profileRoutes);
@@ -92,6 +129,7 @@ async function startServer() {
     await mongoose.connect(MONGODB_URI);
     console.log("MongoDB connected");
     await dropLegacyLeaveBalanceIndexes();
+    await ensureDefaultAdmin();
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

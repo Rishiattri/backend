@@ -1,11 +1,17 @@
-﻿const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const salarySlipSchema = new mongoose.Schema(
   {
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      default: null
+    },
+    employeeEmail: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true
     },
     employeeName: {
       type: String,
