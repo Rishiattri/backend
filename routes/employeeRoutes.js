@@ -15,6 +15,7 @@ router.post("/add", async (req, res) => {
       address,
       experienceLevel,
       joiningDate,
+      birthDate,
       profileImage
     } = req.body;
 
@@ -39,6 +40,7 @@ router.post("/add", async (req, res) => {
       address,
       experienceLevel,
       joiningDate,
+      birthDate: birthDate || null,
       profileImage
     });
 
@@ -71,6 +73,7 @@ router.get("/", async (req, res) => {
       address: employee.address || "",
       experienceLevel: employee.experienceLevel || "Fresher",
       joiningDate: employee.joiningDate || employee.createdAt,
+      birthDate: employee.birthDate || null,
       profileImage: employee.profileImage || ""
     }));
 

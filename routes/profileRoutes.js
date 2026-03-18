@@ -32,7 +32,7 @@ router.put("/me", authMiddleware, async (req, res) => {
         profileImage: updates.profileImage,
         email: updates.email
       },
-      { new: true, upsert: true }
+      { returnDocument: "after", upsert: true }
     );
 
     await User.findByIdAndUpdate(req.user.id, {

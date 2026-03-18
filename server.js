@@ -14,6 +14,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const salaryRoutes = require("./routes/salaryRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
+const { startNotificationScheduler } = require("./services/notificationScheduler");
 const User = require("./models/User");
 
 async function dropLegacyLeaveBalanceIndexes() {
@@ -130,6 +131,7 @@ async function startServer() {
     console.log("MongoDB connected");
     await dropLegacyLeaveBalanceIndexes();
     await ensureDefaultAdmin();
+    await startNotificationScheduler();
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

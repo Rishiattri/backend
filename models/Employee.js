@@ -43,6 +43,10 @@ const employeeSchema = new mongoose.Schema(
       type: Date,
       required: true
     },
+    birthDate: {
+      type: Date,
+      default: null
+    },
     profileImage: {
       type: String,
       default: "",

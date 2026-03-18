@@ -47,6 +47,60 @@ const systemSettingsSchema = new mongoose.Schema(
       pushEnabled: {
         type: Boolean,
         default: false
+      },
+      birthdayAlertsEnabled: {
+        type: Boolean,
+        default: true
+      },
+      holidayAlertsEnabled: {
+        type: Boolean,
+        default: true
+      },
+      senderName: {
+        type: String,
+        default: "StaffHub",
+        trim: true
+      },
+      senderEmail: {
+        type: String,
+        default: "",
+        trim: true,
+        lowercase: true
+      },
+      scheduleCron: {
+        type: String,
+        default: "0 8 * * *",
+        trim: true
+      },
+      holidays: {
+        type: [
+          new mongoose.Schema(
+            {
+              name: {
+                type: String,
+                required: true,
+                trim: true
+              },
+              monthDay: {
+                type: String,
+                required: true,
+                trim: true,
+                match: /^\d{2}-\d{2}$/
+              },
+              description: {
+                type: String,
+                default: "",
+                trim: true
+              },
+              active: {
+                type: Boolean,
+                default: true
+              }
+            },
+            { _id: false }
+          )
+        ],
+        default: []
       }
     },
     employeePreferences: {

@@ -105,4 +105,24 @@ router.post("/check-out", authMiddleware, allowRoles("admin", "employee"), async
   }
 });
 
+router.delete("/:id", authMiddleware, allowRoles("admin"), async (req, res) => {
+  try {
+    const attendance = await Attendance.findByIdAndDelete(req.params.id);
+
+    if (!attendance) {
+      return res.status(404).json({
+        success: false,
+        message: "Attendance record not found"
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Attendance deleted successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || "Server error" });
+  }
+});
+
 module.exports = router;
